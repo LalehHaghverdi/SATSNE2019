@@ -2,7 +2,7 @@
 # % Function that computes the Gaussian kernel values given a vector of
 # % squared Euclidean distances, and the precision of the Gaussian kernel.
 # % The function also computes the perplexity of the distribution.
- #function [H, P] =
+ 
 Hbeta <- function(Di, betai) {
 #betai scalar (=2*sigma_i^2)
 #Di vector =D[i,] dist matrix
@@ -14,19 +14,16 @@ Pi = exp(-Di * betai);
  if (sumPi <realmin) {sumPi=realmin}
 
  Hi = log(sumPi) + betai * sum(Di * Pi) / sumPi;
-# % why not: H = exp(-sum(P(P > 1e-5) .* log(P(P > 1e-5)))); ???
+
  Pi = Pi / sumPi;
  (list("Hi"=Hi,"Pi"=Pi)) #Hi scalar, Pi vector
 }
 
 
-#function [P, beta] =
 d2p <- function (D, u=30, tol=1e-4) {
 #u is the perplexity
-# %D2P Identifies appropriate sigma's to get kk NNs up to some tolerance
-# %
-# %   [P, beta] = d2p(D, kk, tol)
-# %
+# %d2p Identifies appropriate sigma's to get kk NNs up to some tolerance
+
 # % Identifies the required precision (= 1 / variance^2) to obtain a Gaussian
 # % kernel with a certain uncertainty for every datapoint. The desired
 # % uncertainty can be specified through the perplexity u (default = 30). The
@@ -39,14 +36,6 @@ d2p <- function (D, u=30, tol=1e-4) {
 # % (C) Laurens van der Maaten, 2008
 # % Maastricht University
 
-
-# if ~exist('u', 'var') || isempty(u)
-# u = 15;
-# end
-# if ~exist('tol', 'var') || isempty(tol)
-# tol = 1e-4;
-# end
-
 # Initialize some variables
 n = nrow(D);                     # number of instances
 P = matrix(0,n, n);                    #% empty probability matrix
@@ -56,9 +45,6 @@ logU = log(u);                      #% log of perplexity (= entropy)
 
 # Run over all datapoints
 for (i in 1:n) {
-#if ~rem(i, 500)
-#disp(['Computed P-values ' num2str(i) ' of ' num2str(n) ' datapoints...']);
-#end
 
 # Set minimum and maximum values for precision
 betamin = -Inf;
@@ -103,15 +89,7 @@ while ( (abs(Hdiff) > tol) && (tries < 50) ) {
  P[i, ] = thisP;
 } #enf for i
 
-# disp(['Mean value of sigma: ' num2str(mean(sqrt(1 ./ beta)))]);
-# disp(['Minimum value of sigma: ' num2str(min(sqrt(1 ./ beta)))]);
-# disp(['Maximum value of sigma: ' num2str(max(sqrt(1 ./ beta)))]);
-# end
-
 return(list("P"=P,"beta"=beta))
 
 }
-
-
-
 

@@ -15,12 +15,10 @@ start_time <- Sys.time()
 library(FNN)
 
 # Initialize some variables
-n1 = nrow(P1)                                     # number of instances
-n2 = nrow(P2)                                     # number of instances
+n1 = nrow(P1)                                     # number of instances (cells)
+n2 = nrow(P2)                                     # number of instances (cells)
 
-bindingforce=0.05 #0.05  #changing to 0.5 in later iterations
-sharedCell_bindingforce=0.05      #used for shared cells
-
+bindingforce=0.05 #0.5  
 momentum = 0.5;                                     #% initial momentum
 #final_momentum = 0.8;                               #% value to which momentum is changed
 mom_switch_iter = 250;                              #% iteration at which momentum is changed
@@ -30,11 +28,11 @@ epsilon = 500;                                      #% initial learning rate
 min_gain = .01;                                     #% minimum gain for delta-bar-delta
 
 
-coupled_period=30#100#150#20  (1st)
-uncoupled_period=20#150#20#20#150 (2nd)
+coupled_period=30  #(1st)
+uncoupled_period=20 #(2nd)
 
 one_whole_period =coupled_period + uncoupled_period 
-# set max_iter such than the last iterration lands in an early uncoupled period stage ##at the end of XxXXXX
+# set max_iter such than the last iterration lands in an early uncoupled period stage 
 max_iter= max_iter  - (max_iter %% one_whole_period ) + coupled_period + 10 #
 
 
@@ -57,7 +55,6 @@ const2 = sum(P2 * log(P2) );
 
 if ( is.null(Y1_init) ) {
 P1 = P1 * 4                                      # lie about the P-vals to find better local minima
-#ydata = .0001 * randn(n, no_dims);
 #set.seed(125)
 ydata1 <- .0001 * matrix(rnorm(n1*no_dims), nrow = n1, ncol = no_dims)
 }else {    
@@ -65,7 +62,6 @@ ydata1 <- Y1_init
 }
 if ( is.null(Y2_init) ) {
   P2 = P2 * 4                                     # lie about the P-vals to find better local minima
-  #ydata = .0001 * randn(n, no_dims);
 #  set.seed(120)
   ydata2 <- .0001 * matrix(rnorm(n2*no_dims), nrow = n2, ncol = no_dims)
 }else {     
@@ -91,8 +87,8 @@ if (!is.null(X1shared) ) { #& (iter > (max_iter/2) ) ) {
   }
 
 mat <- find.mutual.nn(ydata22,ydata11,nk1,nk2)$mnns  # mnns in Xshared dimensions
-Z1 <- sapply(seq_len(n2),function(i) mat[(mat[,1]==i),2]) #nns of data2 in data1
-Z2 <- sapply(seq_len(n1),function(i) mat[(mat[,2]==i),1])
+Z1 <- sapply(seq_len(n2),function(i) mat[(mat[,1]==i),2])  #nns of data2 in data1
+Z2 <- sapply(seq_len(n1),function(i) mat[(mat[,2]==i),1])  #nns of data1 in data2
 
 mat21<-do.call(rbind,lapply(Z1,
                             function(x)
@@ -113,17 +109,17 @@ mat21[mat21==0]<-NaN
 for (iter in 1:max_iter) {
 
 if ( ((iter %% one_whole_period ) < coupled_period) ) { #start with a coupled period 
-  
+ # adopt binding forces for the coupling 
  bfc1=rep(0,n1)
  bfc2=rep(0,n2)
- bfc1=rep(bindingforce,n1)   #pulls tsne2 towards tsne1
- bfc2=rep(bindingforce,n2)   #pulls tsne1 towards tsne2   # justturned OFF!!
- momentum= 0.5 #0.5        # might need it back!!!!!!!!
+ bfc1=rep(bindingforce,n1)   #to pull tsne2 towards tsne1
+ bfc2=rep(bindingforce,n2)   #to pull tsne1 towards tsne2   
+ #momentum=0.5
  #epsilon=500
 
  } else{ #in uncoupled periods 
-  
- bfc1=rep(0,n1)
+  # turns off couplings  
+ bfc1=rep(0,n1) 
  bfc2=rep(0,n2)
  #momentum=0.5
  #epsilon=500
@@ -253,6 +249,6 @@ find.mutual.nn <- function(data1, data2, k1, k2)
   
   A1<-A[,1]
   A2<-A[,2]
-  # Report cells that are MNNs, and the correction vector per cell in data2.
+  # Report cells that are MNNs.
   list(mnns=A)
 }
