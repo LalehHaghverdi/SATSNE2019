@@ -2,7 +2,7 @@
 R code for Soft Alignment of t-SNEs
 
 
-If the shared features are gene expression values, we recommend cosine (L2) normalisation before passing it as an argument of satins_p (alignment with fixed perplexities) or satsne_annealing (alignment with annealing) functions.
+If the shared features are gene expression values, we recommend cosine (L2) normalisation before passing it as an argument of satsne_p (alignment with fixed perplexities) or satsne_annealing (alignment with annealing) functions.
 
 Example: 
 
