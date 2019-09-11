@@ -86,12 +86,17 @@ n1<-nrow(X10)
 n2<-nrow(X20)
 perplex_in1=min(floor(n1/5),250) #130
 perplex_in2=min(floor(n2/5),250)
-perplex_fin=30#40 
-perplex_steps=0.8#20
+perplex_fin=30 
+perplex_steps=0.8
 no.initiations=3
 
 #### run SATSNE
-tsneX <- satsne_annealing (X10,X20,X1shared,X2shared,nk1=nk1, nk2=nk2,L1=L1, L2=L2, no_dims=2,
+source('code/d2p.R')
+source('code/satsne_p.R')
+source('code/satsne_annealing.R')
+
+tsneX <- satsne_annealing (X10,X20,X1shared,X2shared,labels1=timepoint1,labels2=timepoint2,
+                            nk1=nk1, nk2=nk2,L1=L1, L2=L2, no_dims=2,
                             perplex_in1=perplex_in1,perplex_in2=perplex_in2,perplex_fin=perplex_fin, perplex_steps=perplex_steps,
                             no.initiations=no.initiations,Y1_init=NULL,Y2_init=NULL, max_iter = 200, do.plot=TRUE )
 
@@ -101,11 +106,3 @@ df2<-data.frame(x=tsneX$Y2[,1],y=tsneX$Y2[,2],group=as.factor(timepoint2))
 p2<-ggplot(df2)+geom_point(aes(x,y,color=group,fill=group))+coord_fixed(ratio = 1)+ xlab("t-SNE1") + ylab("t-SNE2")  + theme(legend.position="none")#
 grid.arrange(p1,p2 , nrow = 2 , ncol = 1)
 
-###four-set plot
-#grid.arrange(p10,p20, p1,p2 , nrow = 2 , ncol = 2)
-
-##### Xshared color
-####
-#png(file="hashpa.png",width=700,height=700)
-# grid.arrange(p1,p2 , nrow = 2 , ncol = 1)
-#dev.off()

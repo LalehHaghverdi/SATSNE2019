@@ -1,5 +1,6 @@
-satsne_annealing <-function (X10,X20,X1shared=NULL,X2shared=NULL,nk1=200, nk2=200,L1=10, L2=10, no_dims=2,
-                              perplex_in1=250,perplex_in2=250,perplex_fin=30, perplex_steps=0.8,no.initiations=1,
+satsne_annealing <-function (X10,X20,X1shared=NULL,X2shared=NULL,labels1=NULL, labels2=NULL,
+                             nk1=200, nk2=200,L1=10, L2=10, no_dims=2,
+                             perplex_in1=250,perplex_in2=250,perplex_fin=30, perplex_steps=0.8,no.initiations=1,
                              Y1_init=NULL, Y2_init=NULL,max_iter = 200 , do.plot=TRUE ) {
 ###  
 # X10 data view 1 [cells *genes]
@@ -19,13 +20,13 @@ satsne_annealing <-function (X10,X20,X1shared=NULL,X2shared=NULL,nk1=200, nk2=20
 #perplex_fin:  final (minimum perplexity for either of the views)
 #perplex_steps=0.8 reduce perplexities by 0.8* 
 
-source('code/satsne_p.R')
-source('code/d2p.R')
+#uses ('code/satsne_p.R')
+#uses ('code/d2p.R')
 library(FNN)
 library(ggplot2)
 library(gridExtra)
 
-#uses globally defined datCol1/datCol2 or celltype.1/celltype.2 for colouring of the plots (if defined and do.plot=TRUE)  
+#uses labels1 and labels2 for colouring of the plots (if defined and do.plot=TRUE)  
   
 n1<-nrow(X10)
 n2<-nrow(X20)
@@ -85,18 +86,13 @@ cost<-c(cost,tsneX$Costs)
 print(paste0("perplexity=",c(perplex1, perplex2)) )
 
 if (do.plot==TRUE) {
-
 # plottings for each perplexity round    
-if (exists("datCol1") & exists("datCol2") ) { 
-par(mfrow=c(2,1))
-plot(tsneX$Y1,col=datCol1,pch=20, main="View 1",xlab="",ylab="")
-plot(tsneX$Y2,col=datCol2,pch=20,main="View 2",xlab="",ylab="")
- }else if (exists("celltype.1") & exists("celltype.2")) {
+if (exists("labels1") & exists("labels2")) {
    
-   df1<-data.frame(x=tsneX$Y1[,1],y=tsneX$Y1[,2],group=as.factor(celltype.1))                     
-   p1<-ggplot(df1)+geom_point(aes(x,y,color=group,fill=group)) +coord_fixed(ratio = 1) +ggtitle("View 1") + theme(legend.position="none")#+ scale_color_hue(l=40, c=35)
-   df2<-data.frame(x=tsneX$Y2[,1],y=tsneX$Y2[,2],group=as.factor(celltype.2))
-   p2<-ggplot(df2)+geom_point(aes(x,y,color=group,fill=group))+coord_fixed(ratio = 1)+ggtitle("View 2") + theme(legend.position="none")#+ scale_color_hue(l=40, c=35)
+   df1<-data.frame(x=tsneX$Y1[,1],y=tsneX$Y1[,2],group=as.factor(labels1))                     
+   p1<-ggplot(df1)+geom_point(aes(x,y,color=group,fill=group)) +coord_fixed(ratio = 1) +ggtitle(perplex1) + theme(legend.position="none")#+ scale_color_hue(l=40, c=35)
+   df2<-data.frame(x=tsneX$Y2[,1],y=tsneX$Y2[,2],group=as.factor(labels2))
+   p2<-ggplot(df2)+geom_point(aes(x,y,color=group,fill=group))+coord_fixed(ratio = 1)+ggtitle(perplex2) + theme(legend.position="none")#+ scale_color_hue(l=40, c=35)
    grid.arrange(p1,p2 , nrow = 2 , ncol = 1)  
  }
 }
