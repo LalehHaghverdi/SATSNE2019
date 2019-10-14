@@ -37,12 +37,22 @@ celltype.2 <- as.character(mermeta$Cell_class [ix2] )
 # unique(celltype.1)
 #[1] "Astrocyte"     "Inhibitory"    "Pericytes"     "Endothelial 3" "Microglia"     "Ambiguous"     "OD Immature 1" "Endothelial 2" "Endothelial 1"
 #[10] "Excitatory"    "OD Mature 2"   "OD Mature 1"   "OD Mature 4"   "OD Mature 3"   "OD Immature 2"
-# Reduce and organize the cell types so that the Figure colour codes will be perceivable 
+# Reduce and organize the cell types so that the Figure colour codes will be perceivable
+
+celltype.1[substr(celltype.1,start=1,stop = 13)=="Endothelial 1"]= "Endothelial" #  
+celltype.1[substr(celltype.1,start=1,stop = 13)=="Endothelial 2"]= "Endothelial" #  
+celltype.1[substr(celltype.1,start=1,stop = 13)=="Endothelial 3"]= "Endothelial" 
+
+celltype.2[substr(celltype.2,start=1,stop = 13)=="Endothelial 1"]= "Endothelial" 
+celltype.2[substr(celltype.2,start=1,stop = 13)=="Endothelial 2"]= "Endothelial" 
+celltype.2[substr(celltype.2,start=1,stop = 13)=="Endothelial 3"]= "Endothelial"   
+
 celltype.1[substr(celltype.1,start=1,stop = 11)=="OD Immature"]= "OD Immature" 
 celltype.1[substr(celltype.1,start=1,stop = 9)=="OD Mature"]= "OD Mature" 
 
 celltype.2[substr(celltype.2,start=1,stop = 11)=="OD Immature"]= "OD Immature" 
 celltype.2[substr(celltype.2,start=1,stop = 9)=="OD Mature"]= "OD Mature" 
+
 
 ## prepare 5 cell type memberships as shared features between the views
 xsh1<-matrix(0, nrow= length(celltype.1),ncol=5)
@@ -50,16 +60,14 @@ xsh1[celltype.1=="Inhibitory",1]=1
 xsh1[substr(celltype.1,start=1,stop = 6)=="Endoth" ,2]=1
 xsh1[substr(celltype.1,start=1,stop = 2)=="OD" ,3]=1
 xsh1[celltype.1=="Astrocyte",4]=1
-xsh1[celltype.1=="Microglia",5]=1
-#xsh1[celltype.1=="Excitatory",6]=1
+xsh1[celltype.1=="Excitatory",5]=1
 
 xsh2<-matrix(0, nrow= length(celltype.2),ncol=5)
 xsh2[celltype.2=="Inhibitory",1]=1
 xsh2[substr(celltype.2,start=1,stop = 6)=="Endoth" ,2]=1
 xsh2[substr(celltype.2,start=1,stop = 2)=="OD" ,3]=1
 xsh2[celltype.2=="Astrocyte",4]=1
-xsh2[celltype.2=="Microglia",5]=1
-#xsh2[celltype.2=="Excitatory",6]=1
+xsh2[celltype.2=="Excitatory",5]=1
 
 ######### prepare the arguments for satsne_annealing
 n1= nrow(mer.data1)
@@ -78,7 +86,7 @@ ts2<- Rtsne(mer.data2)
 df1<-data.frame(x=ts1$Y[,1],y=ts1$Y[,2],group=as.factor(celltype.1))                     
 p1<-ggplot(df1)+geom_point(aes(x,y,color=group,fill=group)) +coord_fixed(ratio = 1) + xlab("t-SNE1") + ylab("t-SNE2")  + theme(legend.position="none")#
 df2<-data.frame(x=ts2$Y[,1],y=ts2$Y[,2],group=as.factor(celltype.2))                     
-p2<-ggplot(df2)+geom_point(aes(x,y,color=group,fill=group)) +coord_fixed(ratio = 1) + xlab("t-SNE1") + ylab("t-SNE2")  #+ theme(legend.position="none")#
+p2<-ggplot(df2)+geom_point(aes(x,y,color=group,fill=group)) +coord_fixed(ratio = 1) + xlab("t-SNE1") + ylab("t-SNE2")  + theme(legend.position="none")#
 grid.arrange(p1,p2 , nrow = 2 , ncol = 1)  
 ######## run satsne_annealing
 
