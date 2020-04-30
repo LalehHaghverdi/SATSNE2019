@@ -1,4 +1,4 @@
-satsne_p <-function (P1,P2,X1shared=NULL,X2shared=NULL,nk1=20, nk2=20,L1=10, L2=10, no_dims=2,Y1_init=NULL,Y2_init=NULL,max_iter = 200) {
+satsne_p <-function (P1,P2,X1shared=NULL,X2shared=NULL,nk1=20, nk2=20,L=10, no_dims=3,Y1_init=NULL,Y2_init=NULL,max_iter = 200,initiation.round=FALSE) {
 
 # Adapted from tsne-p Matlab code by Laurens van der Maaten, 2010.
 # Taking precalculated affinity matrices P1 and P2 (with fixed perplexity), this function iterates between coupled and uncoupled t-sne modes
@@ -7,9 +7,8 @@ satsne_p <-function (P1,P2,X1shared=NULL,X2shared=NULL,nk1=20, nk2=20,L1=10, L2=
 
 #nk1=10 #nns of data2 in data1 
 #nk2=10  #nns of data1 in data2 
-#L1 #tsne1 box size
-#L2 #tsne2 box size
-  
+#L #tsne box size
+
 start_time <- Sys.time()
   
 library(FNN)
@@ -18,7 +17,9 @@ library(FNN)
 n1 = nrow(P1)                                     # number of instances (cells)
 n2 = nrow(P2)                                     # number of instances (cells)
 
-bindingforce=0.05 #0.5  
+if (initiation.round==TRUE) {bindingforce=1}
+else{bindingforce=0.05} #0.5 
+
 momentum = 0.5;                                     #% initial momentum
 #final_momentum = 0.8;                               #% value to which momentum is changed
 mom_switch_iter = 250;                              #% iteration at which momentum is changed
@@ -33,7 +34,7 @@ uncoupled_period=20 #(2nd)
 
 one_whole_period =coupled_period + uncoupled_period 
 # set max_iter such than the last iterration lands in an early uncoupled period stage 
-max_iter= max_iter  - (max_iter %% one_whole_period ) + coupled_period + 10 #
+max_iter= max_iter  - (max_iter %% one_whole_period ) + coupled_period + 10 *(!initiation.round) # 10
 
 
 # Make sure P-vals are set properly
@@ -196,19 +197,19 @@ indsmat12 <- cbind(seq_len(n2),match12)
 matching12 <- mat21[indsmat12]
 
 ####
-mom.dirct1 <- (-ydata1+ydata2[matching21,1:no_dims])
+mom.dirct1 <- (-ydata1+ydata2[matching21,] )#1:no_dims])
 mom.dirct1[is.na(mom.dirct1)]=0
 y_incs1 = bfc1 * mom.dirct1 + momentum * y_incs1 - epsilon * (gains1 * y_grads1);
   ydata1 = ydata1 + y_incs1;
 
-mom.dirct2 <- (-ydata2+ydata1[matching12,1:no_dims])
+mom.dirct2 <- (-ydata2+ydata1[matching12,]) #1:no_dims])
 mom.dirct2[is.na(mom.dirct2)]=0
   y_incs2 = bfc2 * mom.dirct2 + momentum * y_incs2 - epsilon * (gains2 * y_grads2);
   ydata2 = ydata2 + y_incs2;
 
 # scale the embeddings in a fixed-size box of length L
-ydata1<-L1*apply(ydata1, 2, function(y) (y-min(y))/(max(y)-min(y)) ) 
-ydata2<-L2*apply(ydata2, 2, function(y) (y-min(y))/(max(y)-min(y)) )
+ydata1<-L*apply(ydata1, 2, function(y) (y-min(y))/(max(y)-min(y)) ) 
+ydata2<-L*apply(ydata2, 2, function(y) (y-min(y))/(max(y)-min(y)) )
 
 # Update the momentum if necessary
 #if (iter == mom_switch_iter){
@@ -230,7 +231,7 @@ return(list("Y1"=ydata1,"Y2"=ydata2,"Costs"=cost1+cost2, "Runtime"=minutes))
 
 #########
 find.mutual.nn <- function(data1, data2, k1, k2)
-  # Finds mutal neighbors between data1 and data2.
+  # Finds mutal neighbors between data1 and data2, using k1 and k2 nns respectively
 {
   
   n1 <- nrow(data1)
@@ -252,3 +253,109 @@ find.mutual.nn <- function(data1, data2, k1, k2)
   # Report cells that are MNNs.
   list(mnns=A)
 }
+
+
+
+
+# % Function that computes the Gaussian kernel values given a vector of
+# % squared Euclidean distances, and the precision of the Gaussian kernel.
+# % The function also computes the perplexity of the distribution.
+
+Hbeta <- function(Di, betai) {
+  #betai scalar (=2*sigma_i^2)
+  #Di vector =D[i,] dist matrix
+  Pi = exp(-Di * betai);
+  #Pi[i]=0 # diagonal P elements
+  
+  sumPi = sum(Pi) -1; #minus 1 for diagonal P elements
+  realmin=1e-18
+  if (sumPi <realmin) {sumPi=realmin}
+  
+  Hi = log(sumPi) + betai * sum(Di * Pi) / sumPi;
+  
+  Pi = Pi / sumPi;
+  (list("Hi"=Hi,"Pi"=Pi)) #Hi scalar, Pi vector
+}
+
+###########
+d2p <- function (D, u=30, tol=1e-4) {
+  #u is the perplexity
+  # %d2p Identifies appropriate sigma's to get kk NNs up to some tolerance,
+  # and turns a distance matrix d to a transition probability matrix P
+  
+  # % Identifies the required precision (= 1 / variance^2) to obtain a Gaussian
+  # % kernel with a certain uncertainty for every datapoint. The desired
+  # % uncertainty can be specified through the perplexity u (default = 30). The
+  # % desired perplexity is obtained up to some tolerance that can be specified
+  # % by tol (default = 1e-4).
+  # % The function returns the final Gaussian kernel in P, as well as the
+  # % employed precisions per instance in beta.
+  # %
+  # %
+  # % (C) Laurens van der Maaten, 2008
+  # % Maastricht University
+  
+  # Initialize some variables
+  n = nrow(D);                     # number of instances
+  P = matrix(0,n, n);                    #% empty probability matrix
+  #beta = matrix(1,n, 1);                  #% empty precision vector
+  beta = rep(1,n);
+  logU = log(u);                      #% log of perplexity (= entropy)
+  
+  # Run over all datapoints
+  for (i in 1:n) {
+    
+    # Set minimum and maximum values for precision
+    betamin = -Inf;
+    betamax = Inf;
+    
+    # Compute the Gaussian kernel and entropy for the current precision
+    Hbetai= Hbeta(D[i, ], beta[i]);
+    Hi =Hbetai$Hi
+    thisP =Hbetai$Pi
+    #thisP[i] =0 # diagonal P elements
+    # Evaluate whether the perplexity is within tolerance
+    Hdiff = Hi - logU;
+    tries = 0;
+    
+    while ( (abs(Hdiff) > tol) && (tries < 50) ) {
+      # If not, increase or decrease precision
+      if (Hdiff > 0){
+        betamin = beta[i]
+        if (is.infinite(betamax) ) {
+          beta[i] = beta[i] * 2;
+        }else{
+          beta[i] = (beta[i] + betamax) / 2;
+        }
+      }else{
+        betamax = beta[i];
+        if (is.infinite(betamin)) {
+          beta[i] = beta[i] / 2;
+        }else{
+          beta[i] = (beta[i] + betamin) / 2;
+        }
+      }
+      # Recompute the values
+      Hbetai= Hbeta(D[i, ], beta[i]);
+      Hi =Hbetai$Hi
+      thisP =Hbetai$Pi
+      #thisP[i] =0 # diagonal P elements
+      Hdiff = Hi - logU;
+      tries = tries + 1;
+    } # while end
+    
+    #Set the final row of P
+    P[i, ] = thisP;
+  } #enf for i
+  
+  return(list("P"=P,"beta"=beta))
+}
+
+cosine.norm <- function(X)
+  # Computes the cosine norm, with some protection from zero-length norms.
+  # Cell rows and Gene columns
+{
+  cellnorm <- pmax(1e-8, sqrt(colSums(X^2)))
+  X/matrix(cellnorm, nrow(X), ncol(X), byrow=TRUE)
+}
+
