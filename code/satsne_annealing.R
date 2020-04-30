@@ -23,9 +23,8 @@ library(ggplot2)
 library(gridExtra)
 library(here)  
   
-source(here("projects/SATSNE2019/code/satsne_p.R"))
-source(here("projects/SATSNE2019/code/d2p.R"))
-  
+source(here("projects/SATSNE2019/code/support_functions.R"))
+
 
 #uses labels1 and labels2 for colouring of the plots (if defined and do.plot=TRUE)  
   
