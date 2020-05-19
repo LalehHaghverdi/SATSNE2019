@@ -88,8 +88,10 @@ if (!is.null(X1shared) ) { #& (iter > (max_iter/2) ) ) {
   }
 
 mat <- find.mutual.nn(ydata22,ydata11,nk1,nk2)$mnns  # mnns in Xshared dimensions
+
 Z1 <- sapply(seq_len(n2),function(i) mat[(mat[,1]==i),2])  #nns of data2 in data1
 Z2 <- sapply(seq_len(n1),function(i) mat[(mat[,2]==i),1])  #nns of data1 in data2
+
 
 mat21<-do.call(rbind,lapply(Z1,
                             function(x)
@@ -237,6 +239,8 @@ find.mutual.nn <- function(data1, data2, k1, k2)
   n1 <- nrow(data1)
   n2 <- nrow(data2)
   n.total <- n1 + n2
+  
+  #print(dim(data1))
   
   W21 <- FNN::get.knnx(data2, query=data1, k=k1)
   W12 <- FNN::get.knnx(data1, query=data2, k=k2)
